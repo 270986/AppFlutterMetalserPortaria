@@ -13,7 +13,7 @@ class GeolocatorController {
 
   List<PositionModel> positionsList = [];
   List<PositionModel> teste;
-
+  PositionModel melhorCoordenada;
   StreamSubscription<Position> _positionStreamSubscription;
 
   getCurrentPosition() async {
@@ -60,15 +60,24 @@ class GeolocatorController {
   }
 
   void toggleListening() {
+    positionsList = [];
+
     _positionStreamSubscription?.cancel();
 
     final positionStream = _geolocatorPlatform.getPositionStream();
+
+    Future.delayed(Duration(milliseconds: 10000), () {
+      _positionStreamSubscription?.cancel();
+      _getBestPosition();
+    });
 
     _positionStreamSubscription = positionStream.handleError((error) {
       _positionStreamSubscription?.cancel();
       _positionStreamSubscription = null;
     }).listen((position) {
       print(position.longitude.toString());
+      print(position.latitude.toString());
+      print(position.accuracy.toString());
 
       positionsList.add(PositionModel(
           accuracy: position.accuracy,
@@ -76,6 +85,41 @@ class GeolocatorController {
           latitude: position.latitude,
           longitude: position.longitude));
     });
+  }
+
+  _getBestPosition() {
+    if (positionsList.length > 0) {
+      var menorAccuracy = positionsList[0].accuracy;
+      positionsList.forEach((position) {
+        if (position.accuracy < menorAccuracy) {
+          menorAccuracy = position.accuracy;
+          melhorCoordenada = PositionModel(
+            accuracy: position.accuracy,
+            date: position.date,
+            latitude: position.latitude,
+            longitude: position.longitude,
+          );
+        }
+      });
+      print("menor accuracy: " + menorAccuracy.toString());
+      print("longitude: " + melhorCoordenada.longitude.toString());
+      print("latitude: " + melhorCoordenada.latitude.toString());
+      _verifyAccuracy();
+    }
+    // tentar pegar de novo. deu ruim..
+  }
+
+  _verifyAccuracy() {
+    if (melhorCoordenada.accuracy <= 40 && _dePara()) {
+      // verificar de para das coordenadas e salva no localstorage
+    } else {
+      //tentar de novo!
+    }
+  }
+
+  bool _dePara() {
+    // se estiver no lugar certo retorna true,, se nao retorna false
+    return true;
   }
 
   void cancelListening() {
@@ -86,6 +130,9 @@ class GeolocatorController {
     teste = positionsList;
 // vai tentar enviar pra API.... se der sucesso a gente limpa o objeto.
 // se der erro, nao limpa e continua coletando.
+
+// comparar com 3 pontos..
+
     print('');
   }
 
