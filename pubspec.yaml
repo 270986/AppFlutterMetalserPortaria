@@ -23,7 +23,7 @@ dependencies:
     sdk: flutter
 
   http: ^0.12.2
-  shared_preferences: ^0.5.4
+  
   baseflow_plugin_template:
     git:
       url: git://github.com/Baseflow/baseflow_plugin_template.git      
@@ -34,12 +34,17 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
   geolocator: ^7.7.0
+  mobx: ^2.0.5
+  flutter_mobx: ^2.0.2
+  shared_preferences: ^2.0.8
+  
   
 
 dev_dependencies:
+  build_runner: ^1.12.2
   flutter_test:
     sdk: flutter
-
+  mobx_codegen: ^2.0.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -54,7 +59,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-   - imagens/
+   - assets/images/
   #  - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

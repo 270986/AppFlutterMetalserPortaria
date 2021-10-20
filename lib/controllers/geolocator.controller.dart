@@ -1,15 +1,54 @@
 import 'dart:async';
 import 'package:app_flutter/models/position.model.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:mobx/mobx.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+part 'geolocator.controller.g.dart';
 
-class GeolocatorController {
-  GeolocatorController();
+class GeolocatorController = GeolocatorControllerBase
+    with _$GeolocatorController;
+
+abstract class GeolocatorControllerBase with Store {
+  GeolocatorControllerBase();
+
+  List<Map<String, dynamic>> posicoesFinais = [];
+
+  int count = 0;
+
+  @observable
+  String longitude = "";
+
+  @observable
+  DateTime date = new DateTime.now();
+
+  @observable
+  String latitude = "";
+
+  @observable
+  String accuracy = "";
+
+  @observable
+  bool isLoading = false;
+
+  @action
+  mudaLongitude(value) => longitude = value;
+
+  @action
+  mudaDate(value) => date = value;
+
+  @action
+  mudaLatitude(value) => latitude = value;
+
+  @action
+  mudaAccuracy(value) => accuracy = value;
+
+  @action
+  mudaLoading(value) => isLoading = value;
 
   final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
-  String longitude = "";
-  String latitude = "";
-  String accuracy = "";
-  DateTime date = new DateTime.now();
+
+  List<String> pontosList = ["Ponto 1", "Ponto 2", "Ponto 3", "Ponto 4"];
 
   List<PositionModel> positionsList = [];
   List<PositionModel> teste;
@@ -27,10 +66,10 @@ class GeolocatorController {
         desiredAccuracy: LocationAccuracy.high,
         forceAndroidLocationManager: true);
     print("position: " + position.altitude.toString());
-    longitude = position.longitude.toString();
-    latitude = position.latitude.toString();
-    accuracy = position.accuracy.toString();
-    date = DateTime.now();
+    mudaLongitude(position.longitude.toString());
+    mudaDate(position.timestamp);
+    mudaLatitude(position.latitude.toString());
+    mudaAccuracy(position.accuracy.toString());
   }
 
   Future<bool> _handlePermission() async {
@@ -60,6 +99,7 @@ class GeolocatorController {
   }
 
   void toggleListening() {
+    mudaLoading(true);
     positionsList = [];
 
     _positionStreamSubscription?.cancel();
@@ -75,9 +115,10 @@ class GeolocatorController {
       _positionStreamSubscription?.cancel();
       _positionStreamSubscription = null;
     }).listen((position) {
-      print(position.longitude.toString());
-      print(position.latitude.toString());
-      print(position.accuracy.toString());
+      // mudaLongitude(position.longitude.toString());
+      // mudaDate(position.timestamp);
+      // mudaLatitude(position.latitude.toString());
+      // mudaAccuracy(position.accuracy.toString());
 
       positionsList.add(PositionModel(
           accuracy: position.accuracy,
@@ -90,6 +131,12 @@ class GeolocatorController {
   _getBestPosition() {
     if (positionsList.length > 0) {
       var menorAccuracy = positionsList[0].accuracy;
+      melhorCoordenada = PositionModel(
+        accuracy: positionsList[0].accuracy,
+        date: positionsList[0].date,
+        latitude: positionsList[0].latitude,
+        longitude: positionsList[0].longitude,
+      );
       positionsList.forEach((position) {
         if (position.accuracy < menorAccuracy) {
           menorAccuracy = position.accuracy;
@@ -104,16 +151,64 @@ class GeolocatorController {
       print("menor accuracy: " + menorAccuracy.toString());
       print("longitude: " + melhorCoordenada.longitude.toString());
       print("latitude: " + melhorCoordenada.latitude.toString());
+
+      mudaLongitude(melhorCoordenada.longitude.toString());
+      mudaDate(melhorCoordenada.date);
+      mudaLatitude(melhorCoordenada.latitude.toString());
+      mudaAccuracy(melhorCoordenada.accuracy.toString());
+
       _verifyAccuracy();
     }
     // tentar pegar de novo. deu ruim..
   }
 
-  _verifyAccuracy() {
+  _verifyAccuracy() async {
+    count++;
+
     if (melhorCoordenada.accuracy <= 40 && _dePara()) {
+      count = 0;
+      var prefs = await SharedPreferences.getInstance();
+
+      var sharedPreferencePositionsList;
+
+      String sharedPreferencePositions =
+          prefs.getString('sharedPreferencePositions');
+
+      if (sharedPreferencePositions == null) {
+        sharedPreferencePositionsList = [];
+      } else {
+        sharedPreferencePositionsList = json.decode(sharedPreferencePositions);
+      }
+
+      Map<String, dynamic> posicao = {};
+      posicao["longitude"] = melhorCoordenada.longitude;
+      posicao["latitude"] = melhorCoordenada.latitude;
+      posicao["date"] = melhorCoordenada.date.toString();
+      posicao["accuracy"] = melhorCoordenada.accuracy;
+
+      // tentar enviar o dado para a API!
+// se estiver sem internet ou der erro... ai sim salva no shared preferences
+
+      sharedPreferencePositionsList.add(posicao);
+      prefs.setString("sharedPreferencePositions",
+          json.encode(sharedPreferencePositionsList));
+
+      mudaLoading(false);
+      //  prefs.setString("tokenjwt", );
       // verificar de para das coordenadas e salva no localstorage
     } else {
-      //tentar de novo!
+      if (count == 1) {
+        count++;
+        //tentar de novo!
+        // abrir popup com mensagem e um botao tentar de novo.[
+        // e a fuyncao tentar de novo chama a funncao toggleListening
+
+      } else {
+        // salva a coordenada capturada
+        // e da sucesso pro porteiro continuar a rota
+
+        count = 0;
+      }
     }
   }
 

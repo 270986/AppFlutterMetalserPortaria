@@ -1,7 +1,9 @@
 import 'package:app_flutter/controllers/geolocator.controller.dart';
+import 'package:app_flutter/widgets/card_item.widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
 
 class GeolocatorPage extends StatefulWidget {
   const GeolocatorPage({Key key}) : super(key: key);
@@ -20,146 +22,10 @@ class _GeolocatorState extends State<GeolocatorPage> {
         title: Text("Bem vindo ao App da Metalser"),
         centerTitle: true,
       ),
-      body: Container(
-        padding: EdgeInsets.only(top: 15),
-        alignment: Alignment.center,
-        color: Colors.white,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 130,
-              color: Colors.lightGreenAccent,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                    child: Container(
-                      width: 125,
-                      color: Colors.blue,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Ponto 1",
-                            style: TextStyle(fontSize: 20, color: Colors.white),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                    child: Container(
-                      width: 120,
-                      color: Colors.blue,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Ponto 2",
-                            style: TextStyle(fontSize: 20, color: Colors.white),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                    child: Container(
-                      width: 120,
-                      color: Colors.blue,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Ponto 3",
-                            style: TextStyle(fontSize: 20, color: Colors.white),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                    child: Container(
-                      width: 125,
-                      color: Colors.blue,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Ponto 4",
-                            style: TextStyle(fontSize: 20, color: Colors.white),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Center(
-              child: Container(
-                padding: EdgeInsets.only(top: 60),
-                child: Column(
-                  children: [
-                    Text("Precisão high"),
-                    Text("Longitude: " + controller.longitude),
-                    Text("Latitude: " + controller.latitude),
-                    Text("Precisão: " + controller.accuracy),
-                    Text("Data: " + controller.date.toString()),
-                    SizedBox(
-                      height: 60,
-                    ),
-                    ElevatedButton(
-                      child: (Text("start")),
-                      onPressed: () {
-                        setState(() {
-                          controller.toggleListening();
-                        });
-                      },
-                    ),
-                    ElevatedButton(
-                      child: (Text("stop")),
-                      onPressed: () {
-                        setState(() {
-                          controller.cancelListening();
-                        });
-                      },
-                    ),
-                    ElevatedButton(
-                      child: (Text(" envio API")),
-                      onPressed: () {
-                        setState(() {
-                          controller.envioAPI();
-                        });
-                      },
-                    ),
-                    ElevatedButton(
-                      child: (Text("Limpar")),
-                      onPressed: () {
-                        setState(() {
-                          controller.limparPosicoes();
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      body: Observer(builder: (_) {
+        return controller.isLoading ? loaderWidget() : homePage();
+      }),
       drawer: Container(color: Colors.blue),
-      floatingActionButton: FloatingActionButton(
-          child: Icon(Icons.add_location),
-          onPressed: () {
-            setState(() {
-              controller.getCurrentPosition();
-            });
-          }),
       bottomNavigationBar: BottomAppBar(
         child: Container(
           height: 40.0,
@@ -180,5 +46,97 @@ class _GeolocatorState extends State<GeolocatorPage> {
 
   teste() {
     print("teste");
+  }
+
+  Widget loaderWidget() {
+    return controller.isLoading ? loader() : homePage();
+  }
+
+  Widget loader() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            strokeWidth: 2,
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget homePage() {
+    return Container(
+      padding: EdgeInsets.only(top: 15),
+      alignment: Alignment.center,
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+              height: 130,
+              color: Colors.lightGreenAccent,
+              child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: controller.pontosList.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return CardItem(
+                      title: controller.pontosList[index],
+                    );
+                  })),
+          Center(
+            child: Container(
+              padding: EdgeInsets.only(top: 60),
+              child: Column(
+                children: [
+                  Text("Precisão high"),
+                  Text("Longitude: " + controller.longitude),
+                  Text("Latitude: " + controller.latitude),
+                  Text("Precisão: " + controller.accuracy),
+                  Text("Data: " + controller.date.toString()),
+                  SizedBox(
+                    height: 60,
+                  ),
+                  ElevatedButton(
+                    child: (Text("start")),
+                    onPressed: () {
+                      setState(() {
+                        controller.toggleListening();
+                      });
+                    },
+                  ),
+                  ElevatedButton(
+                    child: (Text("stop")),
+                    onPressed: () {
+                      setState(() {
+                        controller.cancelListening();
+                      });
+                    },
+                  ),
+                  ElevatedButton(
+                    child: (Text(" envio API")),
+                    onPressed: () {
+                      setState(() {
+                        controller.envioAPI();
+                      });
+                    },
+                  ),
+                  ElevatedButton(
+                    child: (Text("Limpar")),
+                    onPressed: () {
+                      setState(() {
+                        controller.limparPosicoes();
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

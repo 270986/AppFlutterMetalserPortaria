@@ -26,7 +26,7 @@ class LoginPage extends StatelessWidget {
             children: <Widget>[
               SizedBox(
                 height: 150.0,
-                child: Image.asset("imagens/Logo_Metalser.png",
+                child: Image.asset("assets/images/Logo_Metalser.png",
                     fit: BoxFit.contain),
               ),
               SizedBox(height: 50.0),
