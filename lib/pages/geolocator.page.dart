@@ -49,7 +49,8 @@ class _GeolocatorState extends State<GeolocatorPage> {
   }
 
   Widget loaderWidget() {
-    return controller.isLoading ? loader() : homePage();
+    return loader();
+    //   return controller.isLoading ? loader() : homePage();
   }
 
   Widget loader() {
@@ -84,6 +85,7 @@ class _GeolocatorState extends State<GeolocatorPage> {
                   itemBuilder: (BuildContext context, int index) {
                     return CardItem(
                       title: controller.pontosList[index],
+                      selecionaPonto: controller.selecionaPonto(),
                     );
                   })),
           Center(
@@ -103,7 +105,7 @@ class _GeolocatorState extends State<GeolocatorPage> {
                     child: (Text("start")),
                     onPressed: () {
                       setState(() {
-                        controller.toggleListening();
+                        controller.toggleListening(context);
                       });
                     },
                   ),

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:app_flutter/models/position.model.dart';
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mobx/mobx.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -98,7 +99,7 @@ abstract class GeolocatorControllerBase with Store {
     return true;
   }
 
-  void toggleListening() {
+  void toggleListening(context) {
     mudaLoading(true);
     positionsList = [];
 
@@ -108,7 +109,7 @@ abstract class GeolocatorControllerBase with Store {
 
     Future.delayed(Duration(milliseconds: 10000), () {
       _positionStreamSubscription?.cancel();
-      _getBestPosition();
+      _getBestPosition(context);
     });
 
     _positionStreamSubscription = positionStream.handleError((error) {
@@ -128,7 +129,7 @@ abstract class GeolocatorControllerBase with Store {
     });
   }
 
-  _getBestPosition() {
+  _getBestPosition(context) {
     if (positionsList.length > 0) {
       var menorAccuracy = positionsList[0].accuracy;
       melhorCoordenada = PositionModel(
@@ -157,15 +158,13 @@ abstract class GeolocatorControllerBase with Store {
       mudaLatitude(melhorCoordenada.latitude.toString());
       mudaAccuracy(melhorCoordenada.accuracy.toString());
 
-      _verifyAccuracy();
+      _verifyAccuracy(context, melhorCoordenada);
     }
     // tentar pegar de novo. deu ruim..
   }
 
-  _verifyAccuracy() async {
-    count++;
-
-    if (melhorCoordenada.accuracy <= 40 && _dePara()) {
+  _verifyAccuracy(context, melhorCoordenada) async {
+    if (melhorCoordenada.accuracy <= 40 && (_dePara(melhorCoordenada) > 0)) {
       count = 0;
       var prefs = await SharedPreferences.getInstance();
 
@@ -194,27 +193,106 @@ abstract class GeolocatorControllerBase with Store {
           json.encode(sharedPreferencePositionsList));
 
       mudaLoading(false);
+
       //  prefs.setString("tokenjwt", );
       // verificar de para das coordenadas e salva no localstorage
     } else {
-      if (count == 1) {
+      if (count == 0) {
         count++;
         //tentar de novo!
         // abrir popup com mensagem e um botao tentar de novo.[
         // e a fuyncao tentar de novo chama a funncao toggleListening
-
+        showDialog(
+          context: context,
+          builder: (_) {
+            return WillPopScope(
+              onWillPop: () async => false,
+              child: AlertDialog(
+                title: Text("Alerta!"),
+                content: Text("Sua localização está fora de alcance"),
+                actions: [
+                  TextButton(
+                      onPressed: () {
+                        toggleListening(context);
+                        Navigator.of(context).pop();
+                      },
+                      child: Text("TENTAR NOVAMENTE")),
+                ],
+                elevation: 24,
+                backgroundColor: Colors.white,
+              ),
+            );
+          },
+          barrierDismissible: false,
+        );
+        mudaLoading(false);
       } else {
         // salva a coordenada capturada
         // e da sucesso pro porteiro continuar a rota
 
         count = 0;
+        var prefs = await SharedPreferences.getInstance();
+
+        var sharedPreferencePositionsList;
+
+        String sharedPreferencePositions =
+            prefs.getString('sharedPreferencePositions');
+
+        if (sharedPreferencePositions == null) {
+          sharedPreferencePositionsList = [];
+        } else {
+          sharedPreferencePositionsList =
+              json.decode(sharedPreferencePositions);
+        }
+
+        Map<String, dynamic> posicao = {};
+        posicao["longitude"] = melhorCoordenada.longitude;
+        posicao["latitude"] = melhorCoordenada.latitude;
+        posicao["date"] = melhorCoordenada.date.toString();
+        posicao["accuracy"] = melhorCoordenada.accuracy;
+
+        // tentar enviar o dado para a API!
+// se estiver sem internet ou der erro... ai sim salva no shared preferences
+
+        sharedPreferencePositionsList.add(posicao);
+        prefs.setString("sharedPreferencePositions",
+            json.encode(sharedPreferencePositionsList));
+
+        mudaLoading(false);
       }
     }
   }
 
-  bool _dePara() {
+  selecionaPonto() {}
+
+  int _dePara(elhorCoordenada) {
+    int ponto = 0;
+
+    if (melhorCoordenada.latitude >= -20.19033 &&
+        melhorCoordenada.latitude <= -20.19056 &&
+        melhorCoordenada.longitude >= -40.26975 &&
+        melhorCoordenada.longitude <= -40.26998) {
+      ponto = 1;
+    } else if (melhorCoordenada.latitude >= -20.19019 &&
+        melhorCoordenada.latitude <= -20.19037 &&
+        melhorCoordenada.longitude >= -40.26868 &&
+        melhorCoordenada.longitude <= -40.26887) {
+      ponto = 2;
+    } else if (melhorCoordenada.latitude >= -20.19179 &&
+        melhorCoordenada.latitude <= -20.19197 &&
+        melhorCoordenada.longitude >= -40.26879 &&
+        melhorCoordenada.longitude <= -40.26898) {
+      ponto = 3;
+    } else if (melhorCoordenada.latitude >= -20.19157 &&
+        melhorCoordenada.latitude <= -20.19175 &&
+        melhorCoordenada.longitude >= -40.26987 &&
+        melhorCoordenada.longitude <= -40.27007) {
+      ponto = 4;
+    } else {
+      ponto = 0;
+    }
     // se estiver no lugar certo retorna true,, se nao retorna false
-    return true;
+    return ponto;
   }
 
   void cancelListening() {
@@ -222,7 +300,6 @@ abstract class GeolocatorControllerBase with Store {
   }
 
   void envioAPI() {
-    teste = positionsList;
 // vai tentar enviar pra API.... se der sucesso a gente limpa o objeto.
 // se der erro, nao limpa e continua coletando.
 
@@ -231,8 +308,11 @@ abstract class GeolocatorControllerBase with Store {
     print('');
   }
 
-  void limparPosicoes() {
-    positionsList = [];
-    teste = [];
+  void limparPosicoes() async {
+    var prefs = await SharedPreferences.getInstance();
+    prefs.remove("sharedPreferencePositions");
+    mudaLatitude("");
+    mudaLongitude("");
+    mudaAccuracy("");
   }
 }
