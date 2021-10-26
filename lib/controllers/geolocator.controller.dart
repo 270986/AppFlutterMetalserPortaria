@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'package:app_flutter/models/position.model.dart';
+import 'package:app_flutter/services/geolocator.service.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mobx/mobx.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+//import 'dart:math' show sin, cos, sqrt, atan2;
+//import 'package:vector_math/vector_math.dart';
 part 'geolocator.controller.g.dart';
 
 class GeolocatorController = GeolocatorControllerBase
@@ -14,6 +17,36 @@ abstract class GeolocatorControllerBase with Store {
   GeolocatorControllerBase();
 
   List<Map<String, dynamic>> posicoesFinais = [];
+  var distancia;
+  int pontoEncontrado;
+
+  List<Map<String, dynamic>> coordenadasReferencia = [
+    {
+      "latitude": -20.190338758248974,
+      "longitude": -40.269761711862934,
+      "ponto": 1,
+    },
+    {
+      "latitude": -20.19025706066795,
+      "longitude": -40.26871147688896,
+      "ponto": 2,
+    },
+    {
+      "latitude": -20.191937091690306,
+      "longitude": -40.26883087978978,
+      "ponto": 3,
+    },
+    {
+      "latitude": -20.188229735926218,
+      "longitude": -40.26889950029379,
+      "ponto": 4,
+    },
+    {
+      "latitude": -20.191788946610703,
+      "longitude": -40.269993267587424,
+      "ponto": 5,
+    },
+  ];
 
   int count = 0;
 
@@ -117,7 +150,7 @@ abstract class GeolocatorControllerBase with Store {
       _positionStreamSubscription = null;
     }).listen((position) {
       // mudaLongitude(position.longitude.toString());
-      // mudaDate(position.timestamp);
+      // mudaDataLancamento(position.timestamp);
       // mudaLatitude(position.latitude.toString());
       // mudaAccuracy(position.accuracy.toString());
 
@@ -150,8 +183,8 @@ abstract class GeolocatorControllerBase with Store {
         }
       });
       print("menor accuracy: " + menorAccuracy.toString());
-      print("longitude: " + melhorCoordenada.longitude.toString());
       print("latitude: " + melhorCoordenada.latitude.toString());
+      print("longitude: " + melhorCoordenada.longitude.toString());
 
       mudaLongitude(melhorCoordenada.longitude.toString());
       mudaDate(melhorCoordenada.date);
@@ -163,8 +196,9 @@ abstract class GeolocatorControllerBase with Store {
     // tentar pegar de novo. deu ruim..
   }
 
-  _verifyAccuracy(context, melhorCoordenada) async {
-    if (melhorCoordenada.accuracy <= 40 && (_dePara(melhorCoordenada) > 0)) {
+  _verifyAccuracy(context, PositionModel melhorCoordenada) async {
+    final distanciaresult = await _deParaNovo(melhorCoordenada);
+    if (melhorCoordenada.accuracy <= 40 && distanciaresult <= 30) {
       count = 0;
       var prefs = await SharedPreferences.getInstance();
 
@@ -180,15 +214,28 @@ abstract class GeolocatorControllerBase with Store {
       }
 
       Map<String, dynamic> posicao = {};
+
       posicao["longitude"] = melhorCoordenada.longitude;
       posicao["latitude"] = melhorCoordenada.latitude;
       posicao["date"] = melhorCoordenada.date.toString();
       posicao["accuracy"] = melhorCoordenada.accuracy;
+      posicao["ponto"] = pontoEncontrado;
+      melhorCoordenada.ponto = pontoEncontrado;
+      melhorCoordenada.usuario = "MARIANA";
+      List<PositionModel> test = [];
+      test.add(melhorCoordenada);
 
       // tentar enviar o dado para a API!
 // se estiver sem internet ou der erro... ai sim salva no shared preferences
 
       sharedPreferencePositionsList.add(posicao);
+      await GeolocatorService.enviarPosicoes(test).then((value) async {
+        print(value);
+      });
+      // await GeolocatorService.enviarPosicoes(sharedPreferencePositionsList)
+      //     .then((value) async {
+      //   print(value);
+      // });
       prefs.setString("sharedPreferencePositions",
           json.encode(sharedPreferencePositionsList));
 
@@ -219,7 +266,7 @@ abstract class GeolocatorControllerBase with Store {
                       child: Text("TENTAR NOVAMENTE")),
                 ],
                 elevation: 24,
-                backgroundColor: Colors.white,
+                //backgroundColor: Color.white,
               ),
             );
           },
@@ -250,6 +297,7 @@ abstract class GeolocatorControllerBase with Store {
         posicao["latitude"] = melhorCoordenada.latitude;
         posicao["date"] = melhorCoordenada.date.toString();
         posicao["accuracy"] = melhorCoordenada.accuracy;
+        posicao["ponto"] = pontoEncontrado;
 
         // tentar enviar o dado para a API!
 // se estiver sem internet ou der erro... ai sim salva no shared preferences
@@ -265,34 +313,63 @@ abstract class GeolocatorControllerBase with Store {
 
   selecionaPonto() {}
 
-  int _dePara(elhorCoordenada) {
+  /* int _dePara(melhorCoordenada) {
     int ponto = 0;
 
-    if (melhorCoordenada.latitude >= -20.19033 &&
-        melhorCoordenada.latitude <= -20.19056 &&
-        melhorCoordenada.longitude >= -40.26975 &&
-        melhorCoordenada.longitude <= -40.26998) {
+    if (melhorCoordenada.latitude >= -20.190331487812664 &&
+        melhorCoordenada.latitude <= -20.19055840956599 &&
+        melhorCoordenada.longitude >= -40.269696636655105 &&
+        melhorCoordenada.longitude <= -40.269925305143126) {
       ponto = 1;
-    } else if (melhorCoordenada.latitude >= -20.19019 &&
-        melhorCoordenada.latitude <= -20.19037 &&
-        melhorCoordenada.longitude >= -40.26868 &&
-        melhorCoordenada.longitude <= -40.26887) {
+    } else if (melhorCoordenada.latitude >= -20.19018355502629 &&
+        melhorCoordenada.latitude <= -20.190362289829544 &&
+        melhorCoordenada.longitude >= -40.26867694664039 &&
+        melhorCoordenada.longitude <= -40.268875430094525) {
       ponto = 2;
-    } else if (melhorCoordenada.latitude >= -20.19179 &&
-        melhorCoordenada.latitude <= -20.19197 &&
-        melhorCoordenada.longitude >= -40.26879 &&
-        melhorCoordenada.longitude <= -40.26898) {
+    } else if (melhorCoordenada.latitude >= -20.191796123043375 &&
+        melhorCoordenada.latitude <= -20.19198346370194 &&
+        melhorCoordenada.longitude >= -40.26878868916416 &&
+        melhorCoordenada.longitude <= -40.268987169626406) {
       ponto = 3;
-    } else if (melhorCoordenada.latitude >= -20.19157 &&
-        melhorCoordenada.latitude <= -20.19175 &&
-        melhorCoordenada.longitude >= -40.26987 &&
-        melhorCoordenada.longitude <= -40.27007) {
+    } else if (melhorCoordenada.latitude >= -20.191599730329248 &&
+        melhorCoordenada.latitude <= -20.191814590206477 &&
+        melhorCoordenada.longitude >= -40.269826356317786 &&
+        melhorCoordenada.longitude <= -40.2700643073265) {
       ponto = 4;
+    } else if (melhorCoordenada.latitude >= -20.188225771819475 &&
+        melhorCoordenada.latitude <= -20.188411431779592 &&
+        melhorCoordenada.longitude >= -40.268889811788156 &&
+        melhorCoordenada.longitude <= -40.269086954137876) {
+      ponto = 9; //metalser
     } else {
       ponto = 0;
     }
     // se estiver no lugar certo retorna true,, se nao retorna false
+
     return ponto;
+  } */
+
+  Future<dynamic> _deParaNovo(PositionModel melhorCoordenada) async {
+    pontoEncontrado = 1;
+    distancia = Geolocator.distanceBetween(
+        coordenadasReferencia[0]["latitude"],
+        coordenadasReferencia[0]["longitude"],
+        melhorCoordenada.latitude,
+        melhorCoordenada.longitude);
+
+    coordenadasReferencia.forEach((element) {
+      var distanciaCalculada = Geolocator.distanceBetween(
+          element["latitude"],
+          element["longitude"],
+          melhorCoordenada.latitude,
+          melhorCoordenada.longitude);
+      if (distanciaCalculada < distancia) {
+        distancia = distanciaCalculada;
+        pontoEncontrado = element["ponto"];
+      }
+    });
+
+    return distancia;
   }
 
   void cancelListening() {

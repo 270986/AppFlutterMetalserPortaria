@@ -1,5 +1,4 @@
 import 'package:app_flutter/controllers/geolocator.controller.dart';
-import 'package:app_flutter/widgets/card_item.widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -76,62 +75,36 @@ class _GeolocatorState extends State<GeolocatorPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-              height: 130,
-              color: Colors.lightGreenAccent,
-              child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: controller.pontosList.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    return CardItem(
-                      title: controller.pontosList[index],
-                      selecionaPonto: controller.selecionaPonto(),
-                    );
-                  })),
           Center(
             child: Container(
               padding: EdgeInsets.only(top: 60),
               child: Column(
                 children: [
-                  Text("Precisão high"),
-                  Text("Longitude: " + controller.longitude),
-                  Text("Latitude: " + controller.latitude),
-                  Text("Precisão: " + controller.accuracy),
-                  Text("Data: " + controller.date.toString()),
-                  SizedBox(
-                    height: 60,
-                  ),
                   ElevatedButton(
-                    child: (Text("start")),
+                    child: (Text("Registrar Ronda")),
+                    style: ElevatedButton.styleFrom(
+                      shape: const BeveledRectangleBorder(
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(5),
+                        ),
+                      ),
+                    ),
                     onPressed: () {
                       setState(() {
                         controller.toggleListening(context);
                       });
                     },
                   ),
-                  ElevatedButton(
-                    child: (Text("stop")),
-                    onPressed: () {
-                      setState(() {
-                        controller.cancelListening();
-                      });
-                    },
+                  SizedBox(
+                    height: 60,
                   ),
-                  ElevatedButton(
-                    child: (Text(" envio API")),
-                    onPressed: () {
-                      setState(() {
-                        controller.envioAPI();
-                      });
-                    },
-                  ),
-                  ElevatedButton(
-                    child: (Text("Limpar")),
-                    onPressed: () {
-                      setState(() {
-                        controller.limparPosicoes();
-                      });
-                    },
+                  Text("Precisão: " + controller.accuracy),
+                  Text("Latitude: " + controller.latitude),
+                  Text("Longitude: " + controller.longitude),
+                  Text("Precisão: " + controller.accuracy),
+                  Text("DataLancamento: " + controller.date.toString()),
+                  SizedBox(
+                    height: 60,
                   ),
                 ],
               ),

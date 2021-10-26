@@ -30,13 +30,13 @@ class LoginPage extends StatelessWidget {
                     fit: BoxFit.contain),
               ),
               SizedBox(height: 50.0),
-              _textFormField("Login", "Digite o Login",
+              _textFormField("Usuário", "Digite o Usuário",
                   controller: _ctrlLogin, validator: _validaLogin),
               SizedBox(height: 30.0),
               _textFormField("Senha", "Digite a Senha",
                   senha: true, controller: _ctrlSenha, validator: _validaSenha),
               SizedBox(height: 50.0),
-              _raisedButton("Login", Colors.blue, context),
+              _raisedButton("Entrar", Colors.blue, context),
             ],
           ),
         ));
@@ -64,7 +64,7 @@ class LoginPage extends StatelessWidget {
 
   String _validaLogin(String texto) {
     if (texto.isEmpty) {
-      return "Digite o Login";
+      return "Digite o Usuário";
     }
     return null;
   }
@@ -79,6 +79,7 @@ class LoginPage extends StatelessWidget {
   _raisedButton(String texto, Color cor, BuildContext context) {
     // ignore: deprecated_member_use
     return RaisedButton(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       color: cor,
       padding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
       child: Text(texto,
