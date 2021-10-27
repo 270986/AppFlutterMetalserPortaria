@@ -17,7 +17,9 @@ abstract class GeolocatorControllerBase with Store {
   GeolocatorControllerBase();
 
   List<Map<String, dynamic>> posicoesFinais = [];
+
   var distancia;
+
   int pontoEncontrado;
 
   List<Map<String, dynamic>> coordenadasReferencia = [
@@ -65,6 +67,9 @@ abstract class GeolocatorControllerBase with Store {
   @observable
   bool isLoading = false;
 
+  @observable
+  bool bestGeolocator = false;
+
   @action
   mudaLongitude(value) => longitude = value;
 
@@ -80,13 +85,19 @@ abstract class GeolocatorControllerBase with Store {
   @action
   mudaLoading(value) => isLoading = value;
 
+  @action
+  mudaBestGeolocator(value) => bestGeolocator = value;
+
   final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
 
   List<String> pontosList = ["Ponto 1", "Ponto 2", "Ponto 3", "Ponto 4"];
 
   List<PositionModel> positionsList = [];
+
   List<PositionModel> teste;
+
   PositionModel melhorCoordenada;
+
   StreamSubscription<Position> _positionStreamSubscription;
 
   getCurrentPosition() async {
@@ -210,6 +221,7 @@ abstract class GeolocatorControllerBase with Store {
     final distanciaresult = await _deParaNovo(melhorCoordenada);
     if (melhorCoordenada.accuracy <= 40 && distanciaresult <= 30) {
       count = 0;
+
       var prefs = await SharedPreferences.getInstance();
 
       var sharedPreferencePositionsList;
@@ -232,8 +244,7 @@ abstract class GeolocatorControllerBase with Store {
       posicao["ponto"] = pontoEncontrado;
       melhorCoordenada.ponto = pontoEncontrado;
       melhorCoordenada.usuario = prefs.getString("usuario");
-      // TODO -> APAGAR DATE
-      //  melhorCoordenada.date = "2021-10-26 13:25:57.887";
+
       List<PositionModel> test = [];
       test.add(melhorCoordenada);
 
@@ -244,6 +255,8 @@ abstract class GeolocatorControllerBase with Store {
       await GeolocatorService.enviarPosicoes(test).then((value) async {
         print(value);
       });
+
+      envioAPI(context);
       // await GeolocatorService.enviarPosicoes(sharedPreferencePositionsList)
       //     .then((value) async {
       //   print(value);
@@ -252,6 +265,8 @@ abstract class GeolocatorControllerBase with Store {
           json.encode(sharedPreferencePositionsList));
 
       mudaLoading(false);
+
+      // mudaBestGeolocator(true);
 
       //  prefs.setString("tokenjwt", );
       // verificar de para das coordenadas e salva no localstorage
@@ -325,42 +340,6 @@ abstract class GeolocatorControllerBase with Store {
 
   selecionaPonto() {}
 
-  /* int _dePara(melhorCoordenada) {
-    int ponto = 0;
-
-    if (melhorCoordenada.latitude >= -20.190331487812664 &&
-        melhorCoordenada.latitude <= -20.19055840956599 &&
-        melhorCoordenada.longitude >= -40.269696636655105 &&
-        melhorCoordenada.longitude <= -40.269925305143126) {
-      ponto = 1;
-    } else if (melhorCoordenada.latitude >= -20.19018355502629 &&
-        melhorCoordenada.latitude <= -20.190362289829544 &&
-        melhorCoordenada.longitude >= -40.26867694664039 &&
-        melhorCoordenada.longitude <= -40.268875430094525) {
-      ponto = 2;
-    } else if (melhorCoordenada.latitude >= -20.191796123043375 &&
-        melhorCoordenada.latitude <= -20.19198346370194 &&
-        melhorCoordenada.longitude >= -40.26878868916416 &&
-        melhorCoordenada.longitude <= -40.268987169626406) {
-      ponto = 3;
-    } else if (melhorCoordenada.latitude >= -20.191599730329248 &&
-        melhorCoordenada.latitude <= -20.191814590206477 &&
-        melhorCoordenada.longitude >= -40.269826356317786 &&
-        melhorCoordenada.longitude <= -40.2700643073265) {
-      ponto = 4;
-    } else if (melhorCoordenada.latitude >= -20.188225771819475 &&
-        melhorCoordenada.latitude <= -20.188411431779592 &&
-        melhorCoordenada.longitude >= -40.268889811788156 &&
-        melhorCoordenada.longitude <= -40.269086954137876) {
-      ponto = 9; //metalser
-    } else {
-      ponto = 0;
-    }
-    // se estiver no lugar certo retorna true,, se nao retorna false
-
-    return ponto;
-  } */
-
   Future<dynamic> _deParaNovo(PositionModel melhorCoordenada) async {
     pontoEncontrado = 1;
     distancia = Geolocator.distanceBetween(
@@ -388,13 +367,31 @@ abstract class GeolocatorControllerBase with Store {
     _positionStreamSubscription.cancel();
   }
 
-  void envioAPI() {
-// vai tentar enviar pra API.... se der sucesso a gente limpa o objeto.
-// se der erro, nao limpa e continua coletando.
-
-// comparar com 3 pontos..
-
-    print('');
+  void envioAPI(context) {
+    showDialog(
+      context: context,
+      builder: (_) {
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: AlertDialog(
+            title: Text("Sucesso!"),
+            content: Text("Sua localização foi registrada com sucesso!!"),
+            actions: [
+              TextButton(
+                  onPressed: () {
+                    //toggleListening(context);
+                    Navigator.of(context).pop();
+                  },
+                  child: Text("OK")),
+            ],
+            elevation: 24,
+            //backgroundColor: Color.white,
+          ),
+        );
+      },
+      barrierDismissible: false,
+    );
+    //mudaBestGeolocator(true);
   }
 
   void limparPosicoes() async {

@@ -1,6 +1,5 @@
 import 'package:app_flutter/pages/alerta.dart';
 import 'package:app_flutter/pages/geolocator.page.dart';
-
 //import 'package:app_flutter/pages/homepage.dart';
 import 'package:app_flutter/pages/loginapi.dart';
 import 'package:flutter/material.dart';

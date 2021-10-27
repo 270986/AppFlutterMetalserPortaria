@@ -79,15 +79,7 @@ class _GeolocatorState extends State<GeolocatorPage> {
             child: Column(
               children: [
                 SizedBox(
-                  height: 60,
-                ),
-                Text("Precisão: " + controller.accuracy),
-                Text("Latitude: " + controller.latitude),
-                Text("Longitude: " + controller.longitude),
-                Text("Precisão: " + controller.accuracy),
-                Text("DataLancamento: " + controller.date.toString()),
-                SizedBox(
-                  height: 60,
+                  height: 160,
                 ),
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 30),
@@ -105,6 +97,58 @@ class _GeolocatorState extends State<GeolocatorPage> {
                     onPressed: () {
                       setState(() {
                         controller.toggleListening(context);
+                      });
+                    },
+                  ),
+                ),
+                SizedBox(
+                  height: 40,
+                ),
+                //BestGeolocator(),
+                Container(
+                  padding: EdgeInsets.only(top: 15),
+                  alignment: Alignment.center,
+                  color: Colors.white,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Column(
+                          children: [
+                            Text("Ponto: " +
+                                controller.pontoEncontrado.toString()),
+                            Text("Latitude: " + controller.latitude),
+                            Text("Longitude: " + controller.longitude),
+                            Text("Precisão: " + controller.accuracy),
+                            Text("Data: " + controller.date.toString()),
+                            SizedBox(
+                              height: 60,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  height: 20,
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 30),
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    child: (Text("Enviar Dados")),
+                    style: ElevatedButton.styleFrom(
+                      shape: const BeveledRectangleBorder(
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(5),
+                        ),
+                      ),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        controller.envioAPI(context);
                       });
                     },
                   ),
