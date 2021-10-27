@@ -18,7 +18,7 @@ class _GeolocatorState extends State<GeolocatorPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Bem vindo ao App da Metalser"),
+        title: Text("Metalser Portaria"),
         centerTitle: true,
       ),
       body: Observer(builder: (_) {
@@ -76,11 +76,24 @@ class _GeolocatorState extends State<GeolocatorPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Center(
-            child: Container(
-              padding: EdgeInsets.only(top: 60),
-              child: Column(
-                children: [
-                  ElevatedButton(
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 60,
+                ),
+                Text("Precisão: " + controller.accuracy),
+                Text("Latitude: " + controller.latitude),
+                Text("Longitude: " + controller.longitude),
+                Text("Precisão: " + controller.accuracy),
+                Text("DataLancamento: " + controller.date.toString()),
+                SizedBox(
+                  height: 60,
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 30),
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
                     child: (Text("Registrar Ronda")),
                     style: ElevatedButton.styleFrom(
                       shape: const BeveledRectangleBorder(
@@ -95,19 +108,8 @@ class _GeolocatorState extends State<GeolocatorPage> {
                       });
                     },
                   ),
-                  SizedBox(
-                    height: 60,
-                  ),
-                  Text("Precisão: " + controller.accuracy),
-                  Text("Latitude: " + controller.latitude),
-                  Text("Longitude: " + controller.longitude),
-                  Text("Precisão: " + controller.accuracy),
-                  Text("DataLancamento: " + controller.date.toString()),
-                  SizedBox(
-                    height: 60,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],

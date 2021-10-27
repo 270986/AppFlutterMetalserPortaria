@@ -14,17 +14,13 @@ class GeolocatorService {
       "Authorization": "bearer " + token
     };
 
-    List<PositionModel> _body = posicoes;
+    List<Map<String, dynamic>> chckList =
+        posicoes.map((e) => (e.toJson())).toList();
+
+    String _body = json.encode(chckList);
 
     var response = await http.post(url, headers: header, body: _body);
-    //var mapResponse = await json.decode(json.encode(response.body));
-    //Map mapResponse = json.decode(response.body);
-    //var request = http.MultipartRequest('POST', Uri.parse('url, headers: header, body: _body'));
-    //request.files.add(await http.MultipartFile.fromPath('', 'file_path'));
-    print("login :  $response");
-    Map mapResponse = json.decode(response.body);
-    //var mapResponse = json.decode(json.encode(response.body));
-    print(mapResponse);
+
     if (response.statusCode == 200) {
       return true;
     } else {

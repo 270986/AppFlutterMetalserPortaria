@@ -22,9 +22,11 @@ class LoginApi {
     Map mapResponse = json.decode(response.body);
     //var mapResponse = json.decode(json.encode(response.body));
     print(mapResponse);
+
     if (response.statusCode == 200) {
       usuario = Usuario.fromJson(mapResponse);
       prefs.setString("tokenjwt", mapResponse["token"]);
+      prefs.setString("usuario", username);
     } else {
       usuario = null;
     }

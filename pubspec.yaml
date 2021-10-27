@@ -64,7 +64,7 @@ flutter:
   #  - images/a_dot_ham.jpeg
 
 flutter_icons:
-  image_path: "assets/images/Logo_Metalser.png"
+  image_path: "assets/images/Modelo.png"
   android: true
   ios: true
 

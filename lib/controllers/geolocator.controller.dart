@@ -54,7 +54,7 @@ abstract class GeolocatorControllerBase with Store {
   String longitude = "";
 
   @observable
-  DateTime date = new DateTime.now();
+  String date = new DateTime.now().toString();
 
   @observable
   String latitude = "";
@@ -156,7 +156,17 @@ abstract class GeolocatorControllerBase with Store {
 
       positionsList.add(PositionModel(
           accuracy: position.accuracy,
-          date: position.timestamp,
+          date: (DateTime.now().year.toString() +
+              "-" +
+              DateTime.now().month.toString() +
+              "-" +
+              DateTime.now().day.toString() +
+              " " +
+              DateTime.now().hour.toString() +
+              ":" +
+              DateTime.now().minute.toString() +
+              ":" +
+              DateTime.now().second.toString()),
           latitude: position.latitude,
           longitude: position.longitude));
     });
@@ -217,11 +227,13 @@ abstract class GeolocatorControllerBase with Store {
 
       posicao["longitude"] = melhorCoordenada.longitude;
       posicao["latitude"] = melhorCoordenada.latitude;
-      posicao["date"] = melhorCoordenada.date.toString();
+      posicao["date"] = melhorCoordenada.date;
       posicao["accuracy"] = melhorCoordenada.accuracy;
       posicao["ponto"] = pontoEncontrado;
       melhorCoordenada.ponto = pontoEncontrado;
-      melhorCoordenada.usuario = "MARIANA";
+      melhorCoordenada.usuario = prefs.getString("usuario");
+      // TODO -> APAGAR DATE
+      //  melhorCoordenada.date = "2021-10-26 13:25:57.887";
       List<PositionModel> test = [];
       test.add(melhorCoordenada);
 

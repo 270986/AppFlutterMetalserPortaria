@@ -27,13 +27,13 @@ mixin _$GeolocatorController on GeolocatorControllerBase, Store {
   final _$dateAtom = Atom(name: 'GeolocatorControllerBase.date');
 
   @override
-  DateTime get date {
+  String get date {
     _$dateAtom.reportRead();
     return super.date;
   }
 
   @override
-  set date(DateTime value) {
+  set date(String value) {
     _$dateAtom.reportWrite(value, super.date, () {
       super.date = value;
     });
