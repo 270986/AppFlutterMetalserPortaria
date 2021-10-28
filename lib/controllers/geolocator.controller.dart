@@ -6,6 +6,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:mobx/mobx.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:android_intent/android_intent.dart';
+
 //import 'dart:math' show sin, cos, sqrt, atan2;
 //import 'package:vector_math/vector_math.dart';
 part 'geolocator.controller.g.dart';
@@ -100,8 +102,16 @@ abstract class GeolocatorControllerBase with Store {
 
   StreamSubscription<Position> _positionStreamSubscription;
 
-  getCurrentPosition() async {
-    final hasPermission = await _handlePermission();
+  void openLocationSetting(context) async {
+    Navigator.of(context).pop();
+    final AndroidIntent intent = new AndroidIntent(
+      action: 'android.settings.LOCATION_SOURCE_SETTINGS',
+    );
+    await intent.launch();
+  }
+
+  getCurrentPosition(context) async {
+    final hasPermission = await _handlePermission(context);
 
     if (!hasPermission) {
       return;
@@ -117,12 +127,17 @@ abstract class GeolocatorControllerBase with Store {
     mudaAccuracy(position.accuracy.toString());
   }
 
-  Future<bool> _handlePermission() async {
+  Future<bool> _handlePermission(context) async {
     bool serviceEnabled;
     LocationPermission permission;
 
     serviceEnabled = await _geolocatorPlatform.isLocationServiceEnabled();
     if (!serviceEnabled) {
+      envioApiSuccessDialog(
+          context: context,
+          title: "Localização Desativada!",
+          msg: "Por favor, ative a localização do aparelho!",
+          ativarLocalizacao: true);
       return false;
     }
 
@@ -143,7 +158,12 @@ abstract class GeolocatorControllerBase with Store {
     return true;
   }
 
-  void toggleListening(context) {
+  toggleListening(context) async {
+    final hasPermission = await _handlePermission(context);
+
+    if (!hasPermission) {
+      return;
+    }
     mudaLoading(true);
     positionsList = [];
 
@@ -221,55 +241,7 @@ abstract class GeolocatorControllerBase with Store {
     final distanciaresult = await _deParaNovo(melhorCoordenada);
     if (melhorCoordenada.accuracy <= 40 && distanciaresult <= 30) {
       count = 0;
-
-      var prefs = await SharedPreferences.getInstance();
-
-      var sharedPreferencePositionsList;
-
-      String sharedPreferencePositions =
-          prefs.getString('sharedPreferencePositions');
-
-      if (sharedPreferencePositions == null) {
-        sharedPreferencePositionsList = [];
-      } else {
-        sharedPreferencePositionsList = json.decode(sharedPreferencePositions);
-      }
-
-      Map<String, dynamic> posicao = {};
-
-      posicao["longitude"] = melhorCoordenada.longitude;
-      posicao["latitude"] = melhorCoordenada.latitude;
-      posicao["date"] = melhorCoordenada.date;
-      posicao["accuracy"] = melhorCoordenada.accuracy;
-      posicao["ponto"] = pontoEncontrado;
-      melhorCoordenada.ponto = pontoEncontrado;
-      melhorCoordenada.usuario = prefs.getString("usuario");
-
-      List<PositionModel> test = [];
-      test.add(melhorCoordenada);
-
-      // tentar enviar o dado para a API!
-// se estiver sem internet ou der erro... ai sim salva no shared preferences
-
-      sharedPreferencePositionsList.add(posicao);
-      await GeolocatorService.enviarPosicoes(test).then((value) async {
-        print(value);
-      });
-
-      envioAPI(context);
-      // await GeolocatorService.enviarPosicoes(sharedPreferencePositionsList)
-      //     .then((value) async {
-      //   print(value);
-      // });
-      prefs.setString("sharedPreferencePositions",
-          json.encode(sharedPreferencePositionsList));
-
-      mudaLoading(false);
-
-      // mudaBestGeolocator(true);
-
-      //  prefs.setString("tokenjwt", );
-      // verificar de para das coordenadas e salva no localstorage
+      enviarParaApi(context);
     } else {
       if (count == 0) {
         count++;
@@ -282,8 +254,8 @@ abstract class GeolocatorControllerBase with Store {
             return WillPopScope(
               onWillPop: () async => false,
               child: AlertDialog(
-                title: Text("Alerta!"),
-                content: Text("Sua localização está fora de alcance"),
+                title: Text("Atenção!"),
+                content: Text("Sua localização está fora de alcance!"),
                 actions: [
                   TextButton(
                       onPressed: () {
@@ -301,44 +273,114 @@ abstract class GeolocatorControllerBase with Store {
         );
         mudaLoading(false);
       } else {
-        // salva a coordenada capturada
-        // e da sucesso pro porteiro continuar a rota
-
         count = 0;
-        var prefs = await SharedPreferences.getInstance();
-
-        var sharedPreferencePositionsList;
-
-        String sharedPreferencePositions =
-            prefs.getString('sharedPreferencePositions');
-
-        if (sharedPreferencePositions == null) {
-          sharedPreferencePositionsList = [];
-        } else {
-          sharedPreferencePositionsList =
-              json.decode(sharedPreferencePositions);
-        }
-
-        Map<String, dynamic> posicao = {};
-        posicao["longitude"] = melhorCoordenada.longitude;
-        posicao["latitude"] = melhorCoordenada.latitude;
-        posicao["date"] = melhorCoordenada.date.toString();
-        posicao["accuracy"] = melhorCoordenada.accuracy;
-        posicao["ponto"] = pontoEncontrado;
-
-        // tentar enviar o dado para a API!
-// se estiver sem internet ou der erro... ai sim salva no shared preferences
-
-        sharedPreferencePositionsList.add(posicao);
-        prefs.setString("sharedPreferencePositions",
-            json.encode(sharedPreferencePositionsList));
-
-        mudaLoading(false);
+        enviarParaApi(context);
       }
     }
   }
 
-  selecionaPonto() {}
+  enviarParaApi(context) async {
+    List<dynamic> sharedPreferencePositionsList = [];
+    List<PositionModel> posicoesEnviarApi = [];
+
+    var prefs = await SharedPreferences.getInstance();
+
+    String sharedPreferencePositions =
+        prefs.getString('sharedPreferencePositions');
+
+    if (sharedPreferencePositions != null) {
+      sharedPreferencePositionsList = json.decode(sharedPreferencePositions);
+      sharedPreferencePositionsList.forEach((element) {
+        posicoesEnviarApi.add(PositionModel(
+            accuracy: element["Accuracy"],
+            date: element["Date"],
+            latitude: element["Latitude"],
+            longitude: element["Longitude"],
+            ponto: element["Ponto"],
+            usuario: element["Usuario"]));
+      });
+    }
+
+    posicoesEnviarApi.add(PositionModel(
+        accuracy: melhorCoordenada.accuracy,
+        date: melhorCoordenada.date,
+        latitude: melhorCoordenada.latitude,
+        longitude: melhorCoordenada.longitude,
+        ponto: pontoEncontrado,
+        usuario: prefs.getString("usuario")));
+
+    await GeolocatorService.enviarPosicoes(posicoesEnviarApi)
+        .then((value) async {
+      if (value) {
+        prefs.remove('sharedPreferencePositions');
+      } else {
+        prefs.setString(
+            'sharedPreferencePositions', json.encode(posicoesEnviarApi));
+      }
+    });
+    envioApiSuccessDialog(
+        context: context,
+        title: "Sucesso!",
+        msg: "Sua localização foi registrada com sucesso!",
+        ativarLocalizacao: false);
+    mudaLoading(false);
+  }
+
+  buttonEnviarDados(context) async {
+    mudaLoading(true);
+    List<dynamic> sharedPreferencePositionsList = [];
+    List<PositionModel> posicoesEnviarApi = [];
+    var prefs = await SharedPreferences.getInstance();
+
+    String sharedPreferencePositions =
+        prefs.getString('sharedPreferencePositions');
+
+    if (sharedPreferencePositions != null) {
+      sharedPreferencePositionsList = json.decode(sharedPreferencePositions);
+      sharedPreferencePositionsList.forEach((element) {
+        posicoesEnviarApi.add(PositionModel(
+            accuracy: element["Accuracy"],
+            date: element["Date"],
+            latitude: element["Latitude"],
+            longitude: element["Longitude"],
+            ponto: element["Ponto"],
+            usuario: element["Usuario"]));
+      });
+    }
+    if (posicoesEnviarApi.length > 0) {
+      await GeolocatorService.enviarPosicoes(posicoesEnviarApi)
+          .then((value) async {
+        if (value) {
+          prefs.remove('sharedPreferencePositions');
+          envioApiSuccessDialog(
+              context: context,
+              title: "Sucesso!",
+              msg: "Os dados foram enviados com sucesso!",
+              ativarLocalizacao: false);
+
+          // prefs.setString(
+          //     'sharedPreferencePositions', json.encode(posicoesEnviarApi));
+        } else {
+          prefs.setString(
+              'sharedPreferencePositions', json.encode(posicoesEnviarApi));
+          envioApiSuccessDialog(
+              context: context,
+              title: "Atenção!",
+              msg:
+                  "Por algum motivo os dados não foram enviados. Tente novamente mais tarde!",
+              ativarLocalizacao: false);
+        }
+      });
+    } else {
+      envioApiSuccessDialog(
+          context: context,
+          title: "Atenção!",
+          msg: "Todos os dados já foram enviados!",
+          ativarLocalizacao: false);
+    }
+
+    mudaLoading(false);
+  }
 
   Future<dynamic> _deParaNovo(PositionModel melhorCoordenada) async {
     pontoEncontrado = 1;
@@ -367,22 +409,23 @@ abstract class GeolocatorControllerBase with Store {
     _positionStreamSubscription.cancel();
   }
 
-  void envioAPI(context) {
+  void envioApiSuccessDialog({context, title, msg, bool ativarLocalizacao}) {
     showDialog(
       context: context,
       builder: (_) {
         return WillPopScope(
           onWillPop: () async => false,
           child: AlertDialog(
-            title: Text("Sucesso!"),
-            content: Text("Sua localização foi registrada com sucesso!!"),
+            title: Text(title),
+            content: Text(msg),
             actions: [
               TextButton(
                   onPressed: () {
-                    //toggleListening(context);
-                    Navigator.of(context).pop();
+                    ativarLocalizacao
+                        ? openLocationSetting(context)
+                        : Navigator.of(context).pop();
                   },
-                  child: Text("OK")),
+                  child: ativarLocalizacao ? Text("Ativar") : Text("OK")),
             ],
             elevation: 24,
             //backgroundColor: Color.white,

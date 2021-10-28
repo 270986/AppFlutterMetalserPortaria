@@ -16,6 +16,19 @@ class LoginPage extends StatelessWidget {
     );
   }
 
+  buildLoading(BuildContext context) {
+    return showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+            ),
+          );
+        });
+  }
+
   _body(BuildContext context) {
     return Form(
         key: _formKey,
@@ -56,7 +69,7 @@ class LoginPage extends StatelessWidget {
         labelText: label,
         hintText: hint,
         contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(32.0)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6.0)),
       ),
     );
   }
@@ -78,13 +91,13 @@ class LoginPage extends StatelessWidget {
   _raisedButton(String texto, Color cor, BuildContext context) {
     // ignore: deprecated_member_use
     return RaisedButton(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       color: cor,
       padding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
       child: Text(texto,
           style: TextStyle(
             color: Colors.white,
-            fontSize: 20,
+            fontSize: 18,
           )),
       onPressed: () {
         _clickButton(context);
@@ -93,28 +106,40 @@ class LoginPage extends StatelessWidget {
   }
 
   _clickButton(BuildContext context) async {
-    bool formOk = _formKey.currentState.validate();
+    buildLoading(context);
+    FocusScope.of(context).requestFocus(FocusNode());
+    Future.delayed(Duration(milliseconds: 1000), () async {
+      bool formOk = _formKey.currentState.validate();
 
-    if (!formOk) {
-      return;
-    }
-    String username = _ctrlLogin.text;
-    String password = _ctrlSenha.text;
+      if (!formOk) {
+        Navigator.of(context).pop();
+        return;
+      }
+      String username = _ctrlLogin.text;
+      String password = _ctrlSenha.text;
 
-    print("login : $username senha : $password");
+      print("login : $username senha : $password");
 
-    var usuario = await LoginApi.login(username, password);
-    if (usuario != null) {
-      _navegaHomepage(context);
-    } else {
-      alert(context, "Login Inválido");
-    }
+      var usuario = await LoginApi.login(username, password);
+      if (usuario != null) {
+        _navegaHomepage(context);
+      } else {
+        Navigator.of(context).pop();
+        Future.delayed(Duration(milliseconds: 200), () async {
+          alert(context, "Login Inválido");
+        });
+      }
+    });
   }
 
   _navegaHomepage(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => GeolocatorPage()),
-    );
+    Navigator.of(context).pop();
+
+    Navigator.pushReplacement(
+        context, MaterialPageRoute(builder: (context) => GeolocatorPage())
+        // Navigator.push(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => GeolocatorPage()),
+        );
   }
 }

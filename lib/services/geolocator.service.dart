@@ -19,11 +19,15 @@ class GeolocatorService {
 
     String _body = json.encode(chckList);
 
-    var response = await http.post(url, headers: header, body: _body);
-
-    if (response.statusCode == 200) {
-      return true;
-    } else {
+    try {
+      var response = await http.post(url, headers: header, body: _body);
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (err) {
+      print("");
       return false;
     }
   }

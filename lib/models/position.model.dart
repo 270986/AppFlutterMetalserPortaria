@@ -7,7 +7,12 @@ class PositionModel {
   String usuario;
 
   PositionModel(
-      {this.accuracy, this.date, this.latitude, this.longitude, this.ponto});
+      {this.accuracy,
+      this.date,
+      this.latitude,
+      this.longitude,
+      this.ponto,
+      this.usuario});
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
@@ -27,5 +32,6 @@ class PositionModel {
     accuracy = json["accuracy"];
     date = json["date"];
     ponto = json["ponto"];
+    usuario = json["usuario"];
   }
 }
