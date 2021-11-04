@@ -26,28 +26,28 @@ abstract class GeolocatorControllerBase with Store {
 
   List<Map<String, dynamic>> coordenadasReferencia = [
     {
-      "latitude": -20.190338758248974,
-      "longitude": -40.269761711862934,
+      "latitude": -20.19041496871912,
+      "longitude": -40.26980385769676,
       "ponto": 1,
     },
     {
-      "latitude": -20.19025706066795,
-      "longitude": -40.26871147688896,
+      "latitude": -20.19030912549591,
+      "longitude": -40.26876860164139,
       "ponto": 2,
     },
     {
-      "latitude": -20.191937091690306,
-      "longitude": -40.26883087978978,
+      "latitude": -20.19103732539701,
+      "longitude": -40.26887235277943,
       "ponto": 3,
     },
     {
-      "latitude": -20.188229735926218,
-      "longitude": -40.26889950029379,
+      "latitude": -20.191873480950175,
+      "longitude": -40.26890392921661,
       "ponto": 4,
     },
     {
-      "latitude": -20.191788946610703,
-      "longitude": -40.269993267587424,
+      "latitude": -20.19174420874664,
+      "longitude": -40.27000315823748,
       "ponto": 5,
     },
   ];
